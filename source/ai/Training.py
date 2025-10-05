@@ -15,7 +15,7 @@ import io
 
 
 
-def training(camera_position, i):
+def training(camera_position):
 
     scene = pygame.Surface((1920*4, 1080*4))
     screen = pygame.display.set_mode((1920, 1080))
@@ -62,9 +62,8 @@ def training(camera_position, i):
 
 
         if restart == False:
-            print(i)
             torch.save(model.state_dict(), './model')
-            game.Main.init(i)
+            game.Main.init()
             running = False
 
 
@@ -74,74 +73,74 @@ def training(camera_position, i):
 
 
 
-def plot_loss_landscape(model, loss_fn, dataloader, num_points=20, alpha=1.0):
-    # Store original parameters
-    original_params = [p.clone() for p in model.parameters()]
+# def plot_loss_landscape(model, loss_fn, dataloader, num_points=20, alpha=1.0):
+#     # Store original parameters
+#     original_params = [p.clone() for p in model.parameters()]
     
-    # Calculate two random directions
-    direction1 = [torch.randn_like(p) for p in model.parameters()]
-    direction2 = [torch.randn_like(p) for p in model.parameters()]
+#     # Calculate two random directions
+#     direction1 = [torch.randn_like(p) for p in model.parameters()]
+#     direction2 = [torch.randn_like(p) for p in model.parameters()]
     
-    # Normalize directions
-    norm1 = torch.sqrt(sum(torch.sum(d**2) for d in direction1))
-    norm2 = torch.sqrt(sum(torch.sum(d**2) for d in direction2))
-    direction1 = [d / norm1 for d in direction1]
-    direction2 = [d / norm2 for d in direction2]
+#     # Normalize directions
+#     norm1 = torch.sqrt(sum(torch.sum(d**2) for d in direction1))
+#     norm2 = torch.sqrt(sum(torch.sum(d**2) for d in direction2))
+#     direction1 = [d / norm1 for d in direction1]
+#     direction2 = [d / norm2 for d in direction2]
     
-    # Create grid
-    x = np.linspace(-alpha, alpha, num_points)
-    y = np.linspace(-alpha, alpha, num_points)
-    X, Y = np.meshgrid(x, y)
+#     # Create grid
+#     x = np.linspace(-alpha, alpha, num_points)
+#     y = np.linspace(-alpha, alpha, num_points)
+#     X, Y = np.meshgrid(x, y)
     
-    # Calculate loss for each point
-    Z = np.zeros_like(X)
-    for i in range(num_points):
-        for j in range(num_points):
-            # Update model parameters
-            for p, d1, d2 in zip(model.parameters(), direction1, direction2):
-                p.data = p.data + X[i,j] * d1 + Y[i,j] * d2
+#     # Calculate loss for each point
+#     Z = np.zeros_like(X)
+#     for i in range(num_points):
+#         for j in range(num_points):
+#             # Update model parameters
+#             for p, d1, d2 in zip(model.parameters(), direction1, direction2):
+#                 p.data = p.data + X[i,j] * d1 + Y[i,j] * d2
             
-            # Calculate loss
-            total_loss = 0
-            num_batches = 0
-            for batch in dataloader:
-                inputs, targets = batch
-                outputs = model(inputs)
-                loss = loss_fn(outputs, targets)
-                total_loss += loss.item()
-                num_batches += 1
-            Z[i,j] = total_loss / num_batches
+#             # Calculate loss
+#             total_loss = 0
+#             num_batches = 0
+#             for batch in dataloader:
+#                 inputs, targets = batch
+#                 outputs = model(inputs)
+#                 loss = loss_fn(outputs, targets)
+#                 total_loss += loss.item()
+#                 num_batches += 1
+#             Z[i,j] = total_loss / num_batches
             
-            # Reset model parameters
-            for p, orig_p in zip(model.parameters(), original_params):
-                p.data = orig_p.clone()
+#             # Reset model parameters
+#             for p, orig_p in zip(model.parameters(), original_params):
+#                 p.data = orig_p.clone()
     
-    # Plot the loss landscape
-    fig = plt.figure(figsize=(10, 8))
-    ax = fig.add_subplot(111, projection='3d')
-    surf = ax.plot_surface(X, Y, Z, cmap='viridis')
-    ax.set_xlabel('Direction 1')
-    ax.set_ylabel('Direction 2')
-    ax.set_zlabel('Loss')
-    ax.set_title('Loss Landscape')
-    fig.colorbar(surf)
+#     # Plot the loss landscape
+#     fig = plt.figure(figsize=(10, 8))
+#     ax = fig.add_subplot(111, projection='3d')
+#     surf = ax.plot_surface(X, Y, Z, cmap='viridis')
+#     ax.set_xlabel('Direction 1')
+#     ax.set_ylabel('Direction 2')
+#     ax.set_zlabel('Loss')
+#     ax.set_title('Loss Landscape')
+#     fig.colorbar(surf)
     
-    # Save the plot to a buffer
-    buf = io.BytesIO()
-    plt.savefig(buf, format='png')
-    buf.seek(0)
+#     # Save the plot to a buffer
+#     buf = io.BytesIO()
+#     plt.savefig(buf, format='png')
+#     buf.seek(0)
     
-    # Close the plot to free up memory
-    plt.close(fig)
+#     # Close the plot to free up memory
+#     plt.close(fig)
     
-    return buf
+#     return buf
 
-def log_loss_landscape(model, loss_fn, dataloader, step):
-    # Generate the loss landscape plot
-    buf = plot_loss_landscape(model, loss_fn, dataloader)
+# def log_loss_landscape(model, loss_fn, dataloader, step):
+#     # Generate the loss landscape plot
+#     buf = plot_loss_landscape(model, loss_fn, dataloader)
     
-    # Log the plot to wandb
-    wandb.log({
-        "loss_landscape": wandb.Image(buf, caption="Loss Landscape"),
-        "step": step
-    })
+#     # Log the plot to wandb
+#     wandb.log({
+#         "loss_landscape": wandb.Image(buf, caption="Loss Landscape"),
+#         "step": step
+#     })
